@@ -138,9 +138,47 @@ games3 <- games2 %>%
   mutate(
     dist_meters = distHaversine(cbind(lon_home, lat_home),
                                 cbind(lon_away, lat_away)),
-    dist_miles = dist_meters * 0.000621371  # convert meters → miles
+    dist_miles = dist_meters * 0.000621371,  # convert meters → miles
+    year = as.numeric(substr(gameDate, 1, 4)),   # <-- year now numeric
+    winning_team = case_when(
+      winner == awayteamId ~ "away",
+      winner == hometeamId ~ "home",
+      TRUE ~ NA_character_   # fallback in case of missing/unmatched ID
+    )
   )
 
+games4 <- games3 %>%
+  filter(gameType == "Regular Season"
+         , !is.na(dist_miles)
+         )
+
+home_win_pct <- games4 %>%
+  group_by(year) %>%
+  summarise(
+    home_win_percent = mean(winning_team == "home") * 100
+  )
+
+ggplot(home_win_pct, aes(x = year, y = home_win_percent)) +
+  geom_point(size = 2) +  # only the dots
+  labs(
+    title = "Home Win Percentage by Year",
+    x = "Year",
+    y = "Home Win Percentage (%)"
+  ) +
+  theme_minimal()
+
+ggplot(home_win_pct, aes(x = year, y = home_win_percent)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Home Win Percentage by Year",
+    x = "Year",
+    y = "Home Win Percentage (%)"
+  ) +
+  scale_x_continuous(breaks = seq(min(home_win_pct$year),
+                                  max(home_win_pct$year),
+                                  by = 5)) +
+  theme_minimal()
 
 ggplot(games3, aes(x = dist_miles, y = point_diff)) +
   geom_point(alpha = 0.5, color = "blue", size = 0.5) +  # smaller, semi-transparent points
@@ -152,7 +190,7 @@ ggplot(games3, aes(x = dist_miles, y = point_diff)) +
   theme_minimal()
 
 # Simple linear regression
-lm_model <- lm(point_diff ~ dist_miles, data = games3)
+lm_model <- lm(point_diff ~ dist_miles + year, data = games4)
 
 # View the summary of the model
 summary(lm_model)
