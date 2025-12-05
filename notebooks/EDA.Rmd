@@ -1,0 +1,147 @@
+---
+title: "EDA"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(car)
+library(lmtest)
+library(sandwich)
+library(stargazer)
+library(geosphere)
+library(cowplot)
+```
+
+``` {r loading_data}
+games <- read_csv("../data/raw/Games.csv")
+
+head(games)
+```
+
+``` {r team_locations}
+# City center coordinates
+team_locations <- tribble(
+  ~teamId, ~city, ~latitude, ~longitude,
+  1610612737, "Atlanta", 33.7490, -84.3880,
+  1610612738, "Boston", 42.3601, -71.0589,
+  1610612751, "Brooklyn", 40.6782, -73.9442,
+  1610612766, "Charlotte", 35.2271, -80.8431,
+  1610612741, "Chicago", 41.8781, -87.6298,
+  1610612739, "Cleveland", 41.4993, -81.6944,
+  1610612742, "Dallas", 32.7767, -96.7970,
+  1610612743, "Denver", 39.7392, -104.9903,
+  1610612765, "Detroit", 42.3314, -83.0458,
+  1610612744, "Golden State", 37.7749, -122.4194,  # San Francisco
+  1610612745, "Houston", 29.7604, -95.3698,
+  1610612754, "Indiana", 39.7684, -86.1581,  # Indianapolis
+  1610612746, "LA Clippers", 34.0522, -118.2437,  # Los Angeles
+  1610612747, "LA Lakers", 34.0522, -118.2437,  # Los Angeles
+  1610612763, "Memphis", 35.1495, -90.0490,
+  1610612748, "Miami", 25.7617, -80.1918,
+  1610612749, "Milwaukee", 43.0389, -87.9065,
+  1610612750, "Minnesota", 44.9778, -93.2650,  # Minneapolis
+  1610612740, "New Orleans", 29.9511, -90.0715,
+  1610612752, "New York", 40.7128, -74.0060,
+  1610612760, "Oklahoma City", 35.4676, -97.5164,
+  1610612753, "Orlando", 28.5383, -81.3792,
+  1610612755, "Philadelphia", 39.9526, -75.1652,
+  1610612756, "Phoenix", 33.4484, -112.0740,
+  1610612757, "Portland", 45.5152, -122.6784,
+  1610612758, "Sacramento", 38.5816, -121.4944,
+  1610612759, "San Antonio", 29.4241, -98.4936,
+  1610612761, "Toronto", 43.6532, -79.3832,
+  1610612762, "Utah", 40.7608, -111.8910,  # Salt Lake City
+  1610612764, "Washington", 38.9072, -77.0369
+)
+
+# Display the team locations
+print(team_locations)
+```
+
+``` {r calc_distance}
+# Function to calculate distance in miles using haversine formula
+calculate_distance <- function(lat1, lon1, lat2, lon2) {
+  # distHaversine returns distance in meters, convert to miles
+  distance_meters <- distHaversine(c(lon1, lat1), c(lon2, lat2))
+  distance_miles <- distance_meters / 1609.34
+  return(distance_miles)
+}
+
+# Join home team coordinates
+games <- games %>%
+  left_join(team_locations %>% select(teamId, home_lat = latitude, home_lon = longitude),
+            by = c("hometeamId" = "teamId"))
+
+# Join away team coordinates
+games <- games %>%
+  left_join(team_locations %>% select(teamId, away_lat = latitude, away_lon = longitude),
+            by = c("awayteamId" = "teamId"))
+
+```
+
+``` {r add_variables}
+# Calculate distance between home and away cities and do simple point calculations
+games <- games %>% 
+  mutate(
+    point_diff = awayScore - homeScore,
+    total_pts = awayScore + homeScore,
+    distance = mapply(calculate_distance, home_lat, home_lon, away_lat, away_lon),
+    distance = round(distance, 2)
+  )
+
+# Display summary of distances
+cat("Distance Summary\n")
+cat("Average travel distance:", round(mean(games$distance, na.rm = TRUE), 2), "miles\n")
+cat("Maximum travel distance:", round(max(games$distance, na.rm = TRUE), 2), "miles\n")
+cat("Minimum travel distance:", round(min(games$distance, na.rm = TRUE), 2), "miles\n")
+cat("Median travel distance:", round(median(games$distance, na.rm = TRUE), 2), "miles\n")
+
+```
+``` {r mutate_table}
+# Show a sample of games with distances
+head(games %>% select(hometeamId, awayteamId, distance, point_diff))
+```
+
+``` {r distance_visualization, warning=FALSE}
+# Visualize the distribution of travel distances
+plot_distances <- ggplot(games, aes(x = distance)) +
+                      geom_histogram(bins = 50, fill = "steelblue", alpha = 0.7) +
+                      geom_vline(aes(xintercept = mean(distance, na.rm = TRUE)), 
+                                 color = "red", linetype = "dashed", size = 1) +
+                      labs(title = "Distribution of Travel Distances\nfor Away Teams",
+                           x = "Distance (miles)",
+                           y = "Frequency",
+                           subtitle = paste("Mean:", round(mean(games$distance, na.rm = TRUE), 1), "miles"))
+
+# Distance vs Point Differential
+plot_distance_points <- ggplot(games, aes(x = distance, y = point_diff)) +
+                            geom_point(alpha = 0.3, color = "steelblue") +
+                            labs(title = "Relationship Between Travel Distance\nand Point Differential",
+                                 x = "Distance (miles)",
+                                 y = "Point Differential (Away - Home)",
+                                 subtitle = "Negative values indicate home team won")
+
+plot_grid(plot_distances, plot_distance_points, align = "h")
+```
+
+``` {r exploring_data}
+cat("Scoring Summary\n")
+cat("Rows:", nrow(games), "\n")
+cat("Columns:", ncol(games), "\n")
+cat("Average total points per game:", mean(games$total_pts, na.rm = TRUE), "\n")
+cat("Highest scoring game:", max(games$total_pts, na.rm = TRUE), "\n")
+cat("Lowest scoring game:", min(games$total_pts, na.rm = TRUE), "\n")
+cat("Average point differential:", mean(games$point_diff, na.rm = TRUE), "\n")
+```
+## Linear Regression Models
+``` {r linear_1}
+model_1 <- lm(point_diff ~ distance, data = games)
+
+model_1
+```
+``` {r linear_2}
+model_2 <- lm(point_diff ~ distance + attendance, data = games)
+
+model_2
+```
