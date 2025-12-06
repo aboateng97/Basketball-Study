@@ -138,19 +138,50 @@ games3 <- games2 %>%
   mutate(
     dist_meters = distHaversine(cbind(lon_home, lat_home),
                                 cbind(lon_away, lat_away)),
-    dist_miles = dist_meters * 0.000621371,  # convert meters → miles
-    year = as.numeric(substr(gameDate, 1, 4)),   # <-- year now numeric
+    dist_miles = dist_meters * 0.000621371,
+    year = as.numeric(substr(gameDate, 1, 4)),
     winning_team = case_when(
       winner == awayteamId ~ "away",
       winner == hometeamId ~ "home",
-      TRUE ~ NA_character_   # fallback in case of missing/unmatched ID
+      TRUE ~ NA_character_
+    ),
+    
+    # ------------ Longitude-based zones ----------
+    home_zone = case_when(
+      lon_home < -105 ~ "West",
+      lon_home > -90  ~ "East",
+      TRUE            ~ "Central"   # in between → Central
+    ),
+    away_zone = case_when(
+      lon_away < -105 ~ "West",
+      lon_away > -90  ~ "East",
+      TRUE            ~ "Central"
     )
   )
 
+
 games4 <- games3 %>%
-  filter(gameType == "Regular Season"
-         , !is.na(dist_miles)
-         )
+  filter(gameType == "Regular Season", !is.na(dist_miles)) %>%
+  mutate(
+    travel_type = case_when(
+      # East ↔ West (either direction)
+      (home_zone == "East"  & away_zone == "West") |
+        (home_zone == "West"  & away_zone == "East") ~ "East-West Travel",
+      
+      # East ↔ Central
+      (home_zone == "East"  & away_zone == "Central") |
+        (home_zone == "Central" & away_zone == "East") ~ "East-Central Travel",
+      
+      # Central ↔ West
+      (home_zone == "Central" & away_zone == "West") |
+        (home_zone == "West"    & away_zone == "Central") ~ "Central-West Travel",
+      
+      # Same-zone games
+      home_zone == away_zone ~ "In-Zone",
+      
+      TRUE ~ "Other/International"  # safety catch
+    )
+  )
 
 home_win_pct <- games4 %>%
   group_by(year) %>%
