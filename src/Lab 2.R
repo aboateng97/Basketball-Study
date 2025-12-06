@@ -163,25 +163,26 @@ games3 <- games2 %>%
 games4 <- games3 %>%
   filter(gameType == "Regular Season", !is.na(dist_miles)) %>%
   mutate(
-    travel_type = case_when(
-      # East ↔ West (either direction)
-      (home_zone == "East"  & away_zone == "West") |
-        (home_zone == "West"  & away_zone == "East") ~ "East-West Travel",
-      
-      # East ↔ Central
-      (home_zone == "East"  & away_zone == "Central") |
-        (home_zone == "Central" & away_zone == "East") ~ "East-Central Travel",
-      
-      # Central ↔ West
-      (home_zone == "Central" & away_zone == "West") |
-        (home_zone == "West"    & away_zone == "Central") ~ "Central-West Travel",
-      
-      # Same-zone games
-      home_zone == away_zone ~ "In-Zone",
-      
-      TRUE ~ "Other/International"  # safety catch
+    away_travel = case_when(
+      away_zone == "East"    & home_zone == "West"    ~ "East to West",
+      away_zone == "West"    & home_zone == "East"    ~ "West to East",
+      away_zone == "East"    & home_zone == "Central" ~ "East to Central",
+      away_zone == "Central" & home_zone == "East"    ~ "Central to East",
+      away_zone == "Central" & home_zone == "West"    ~ "Central to West",
+      away_zone == "West"    & home_zone == "Central" ~ "West to Central",
+      away_zone == home_zone                         ~ "In-Zone",
+      TRUE                                          ~ "Other/International"
+    ),
+    away_travel_high = factor(
+      case_when(
+        away_travel == "East to West" ~ "East to West",
+        away_travel == "West to East" ~ "West to East",
+        TRUE                          ~ "Neither"
+      ),
+      levels = c("Neither", "West to East", "East to West")
     )
   )
+
 
 home_win_pct <- games4 %>%
   group_by(year) %>%
@@ -227,7 +228,7 @@ lm_model <- lm(point_diff ~ dist_miles + year, data = games4)
 summary(lm_model)
 
 # Multiple linear regression
-lm_model2 <- lm(point_diff ~ dist_miles + attendance, data = games3)
+lm_model2 <- lm(point_diff ~ dist_miles + away_travel_high + year, data = games4)
 
 # View the summary of the model
 summary(lm_model2)
@@ -237,13 +238,13 @@ lm_model3 <- lm(point_diff ~ attendance, data = games3)
 # View the summary of the model
 summary(lm_model3)
 
-ggplot(games3, aes(x = dist_miles, y = point_diff)) +
+ggplot(games4, aes(x = year, y = point_diff)) +
   geom_point(alpha = 0.5, size = 0.5, color = "blue") +
   geom_smooth(method = "lm", color = "red", se = TRUE) +
   labs(
-    x = "Distance between teams (miles)",
+    x = "Year",
     y = "Point Differential (Away - Home)",
-    title = "Scatterplot of Point Differential vs. Distance Traveled"
+    title = "Scatterplot of Point Differential vs. Year"
   ) +
   theme_minimal()
 
