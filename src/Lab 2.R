@@ -183,21 +183,38 @@ games4 <- games3 %>%
     )
   )
 
+set.seed(123)   # ensures reproducibility
 
-home_win_pct <- games4 %>%
+# total number of rows
+n <- nrow(games4)
+
+# sample 30% of the rows for EDA
+eda_index <- sample(1:n, size = floor(0.30 * n), replace = FALSE)
+
+# create the two datasets
+games4_eda   <- games4[eda_index, ]
+games4_model <- games4[-eda_index, ]
+
+
+home_win_pct <- games4_eda %>%
   group_by(year) %>%
   summarise(
     home_win_percent = mean(winning_team == "home") * 100
   )
 
 ggplot(home_win_pct, aes(x = year, y = home_win_percent)) +
-  geom_point(size = 2) +  # only the dots
+  geom_point(size = 3, color = "blue") + 
   labs(
     title = "Home Win Percentage by Year",
     x = "Year",
     y = "Home Win Percentage (%)"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 20, face = "bold"),
+    axis.title = element_text(size = 16),
+    axis.text = element_text(size = 14)
+  )
 
 ggplot(home_win_pct, aes(x = year, y = home_win_percent)) +
   geom_line(size = 1) +
@@ -222,23 +239,37 @@ ggplot(games3, aes(x = dist_miles, y = point_diff)) +
   theme_minimal()
 
 # Simple linear regression
-lm_model <- lm(point_diff ~ dist_miles + year, data = games4)
+lm_model <- lm(point_diff ~ dist_miles, data = games4_model)
+
+# View the summary of the model
+summary(lm_model)
+
+# Simple linear regression
+lm_model <- lm(point_diff ~ dist_miles + year, data = games4_model)
 
 # View the summary of the model
 summary(lm_model)
 
 # Multiple linear regression
-lm_model2 <- lm(point_diff ~ dist_miles + away_travel_high + year, data = games4)
+lm_model2 <- lm(point_diff ~ dist_miles + away_travel_high, data = games4_model)
 
 # View the summary of the model
 summary(lm_model2)
 
-lm_model3 <- lm(point_diff ~ attendance, data = games3)
+# Multiple linear regression
+lm_model4 <- lm(point_diff ~ dist_miles + away_travel_high + attendance, data = games4_model)
 
 # View the summary of the model
-summary(lm_model3)
+summary(lm_model4)
 
-ggplot(games4, aes(x = year, y = point_diff)) +
+# Multiple linear regression
+lm_model4 <- lm(point_diff ~ dist_miles + away_travel_high + attendance + year, data = games4_model)
+
+# View the summary of the model
+summary(lm_model4)
+
+#EDA
+ggplot(games4_eda, aes(x = year, y = point_diff)) +
   geom_point(alpha = 0.5, size = 0.5, color = "blue") +
   geom_smooth(method = "lm", color = "red", se = TRUE) +
   labs(
@@ -248,8 +279,19 @@ ggplot(games4, aes(x = year, y = point_diff)) +
   ) +
   theme_minimal()
 
-ggplot(games3, aes(x = attendance, y = point_diff)) +
-  geom_point(alpha = 0.5, size = 0.5, color = "darkgreen") +  # tiny, semi-transparent points
+ggplot(games4_eda, aes(x = dist_miles, y = point_diff)) +
+  geom_point(alpha = 0.5, size = 0.5, color = "blue") +
+  geom_smooth(method = "lm", color = "red", se = TRUE) +
+  labs(
+    x = "Distance Travelled (miles)",
+    y = "Point Differential (Away - Home)",
+    title = "Scatterplot of Point Differential vs. Distance Travelled"
+  ) +
+  theme_minimal()
+
+
+ggplot(games4_eda, aes(x = attendance, y = point_diff)) +
+  geom_point(alpha = 0.5, size = 0.5, color = "blue") +  # tiny, semi-transparent points
   geom_smooth(method = "lm", color = "red", se = TRUE) +      # regression line with confidence interval
   labs(
     x = "Attendance",
@@ -258,4 +300,13 @@ ggplot(games3, aes(x = attendance, y = point_diff)) +
   ) +
   theme_minimal()
 
+ggplot(games4_eda, aes(x = away_travel_high, y = point_diff)) +
+  geom_point(alpha = 0.5, size = 0.5, color = "blue") +  # tiny, semi-transparent points
+  geom_smooth(method = "lm", color = "red", se = TRUE) +      # regression line with confidence interval
+  labs(
+    x = "Away_travel_high",
+    y = "Point Differential (Away - Home)",
+    title = "Scatterplot of Point Differential vs. Away_travel_high"
+  ) +
+  theme_minimal()
 
