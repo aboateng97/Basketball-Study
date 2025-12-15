@@ -9,6 +9,7 @@ format:
     classoption: onecolumn
     fontsize: 11pt
 editor: visual
+geometry: "left=1in,right=1in,top=1in,bottom=1in"
 ---
 
 ```{r load packages, include = FALSE}
@@ -22,10 +23,207 @@ library(tidyverse)
 library(dplyr)
 library(stargazer)
 library(sandwich)
+library(tidygeocoder)
+library(geosphere)
 ```
 
 ```{r load data, include = FALSE}
-data <- read.csv("../data/raw/Games.csv")
+games <- read.csv("../data/raw/Games.csv")
+```
+
+```{r old_code, include = FALSE}
+games <- games %>%
+  mutate(point_diff = awayScore - homeScore)
+
+#There are 45 unique hometeamCity
+unique(games$hometeamCity)
+
+#There are 49 unique awayteamCity
+unique(games$awayteamCity)
+
+# Find the total Number of Unique Cities in the Dataset
+unique_cities <- games %>%
+  select(hometeamCity, awayteamCity) %>%         
+  pivot_longer(cols = everything(),              
+               names_to = "type",                
+               values_to = "city") %>% 
+  distinct(city)                                 
+
+# View the unique cities
+print(unique_cities)
+
+# Count how many unique cities there are
+num_unique_cities <- nrow(unique_cities)
+print(num_unique_cities)
+
+##There are 51 total unique cities (home and away)
+
+# Clean city names by creating new city variable
+city_lookup <- games %>%
+  select(hometeamCity) %>% rename(city = hometeamCity) %>%
+  bind_rows(games %>% select(awayteamCity) %>% rename(city = awayteamCity)) %>%
+  distinct() %>%
+  mutate(city_clean = case_when(
+    city == "Los Angeles"            ~ "Los Angeles, California",
+    city == "LA"                      ~ "Los Angeles, California",
+    city == "Phoenix"                 ~ "Phoenix, Arizona",
+    city == "New York"                ~ "New York, New York",
+    city == "Cleveland"               ~ "Cleveland, Ohio",
+    city == "Toronto"                 ~ "Toronto, Ontario, Canada",
+    city == "Charlotte"               ~ "Charlotte, North Carolina",
+    city == "Brooklyn"                ~ "Brooklyn, New York",
+    city == "Oklahoma City"           ~ "Oklahoma City, Oklahoma",
+    city == "Detroit"                 ~ "Detroit, Michigan",
+    city == "Boston"                  ~ "Boston, Massachusetts",
+    city == "Indiana"                 ~ "Indianapolis, Indiana",
+    city == "Washington"              ~ "Washington, D.C.",
+    city == "Milwaukee"               ~ "Milwaukee, Wisconsin",
+    city == "Portland"                ~ "Portland, Oregon",
+    city == "Memphis"                 ~ "Memphis, Tennessee",
+    city == "Chicago"                 ~ "Chicago, Illinois",
+    city == "Philadelphia"            ~ "Philadelphia, Pennsylvania",
+    city == "San Antonio"             ~ "San Antonio, Texas",
+    city == "Minnesota"               ~ "Minneapolis, Minnesota",
+    city == "Denver"                  ~ "Denver, Colorado",
+    city == "Utah"                    ~ "Salt Lake City, Utah",
+    city == "Dallas"                  ~ "Dallas, Texas",
+    city == "Golden State"            ~ "San Francisco, California",
+    city == "Miami"                   ~ "Miami, Florida",
+    city == "Houston"                 ~ "Houston, Texas",
+    city == "New Orleans"             ~ "New Orleans, Louisiana",
+    city == "Sacramento"              ~ "Sacramento, California",
+    city == "Atlanta"                 ~ "Atlanta, Georgia",
+    city == "Orlando"                 ~ "Orlando, Florida",
+    city == "New Jersey"              ~ "New Jersey, USA",
+    city == "Seattle"                 ~ "Seattle, Washington",
+    city == "Vancouver"               ~ "Vancouver, British Columbia, Canada",
+    city == "Kansas City"             ~ "Kansas City, Missouri",
+    city == "San Diego"               ~ "San Diego, California",
+    city == "Buffalo"                 ~ "Buffalo, New York",
+    city == "Kansas City-Omaha"       ~ "Kansas City / Omaha, USA",
+    city == "Capital"                 ~ "Washington, D.C.",
+    city == "Baltimore"               ~ "Baltimore, Maryland",
+    city == "Cincinnati"              ~ "Cincinnati, Ohio",
+    city == "San Francisco"            ~ "San Francisco, California",
+    city == "St. Louis"               ~ "St. Louis, Missouri",
+    city == "Syracuse"                ~ "Syracuse, New York",
+    city == "Minneapolis"             ~ "Minneapolis, Minnesota",
+    city == "Ft. Wayne Zollner"       ~ "Fort Wayne, Indiana",
+    city == "Rochester"               ~ "Rochester, New York",
+    city == "Tri-Cities"              ~ "Tri-Cities, Washington / Oregon",
+    city == "Guangzhou"               ~ "Guangzhou, Guangdong, China",
+    city == "South East Melbourne"    ~ "Melbourne, Victoria, Australia",
+    city == "Hapoel"                  ~ "Tel Aviv, Israel",
+    TRUE                              ~ city
+  ))
+
+# Geocode to get lat/long
+city_coords <- city_lookup %>%
+  geocode(city_clean, method = "osm")   # or “iq” or “google” if you have API
+# This will return lat & long columns
+
+# Inspect:
+head(city_coords)
+
+#merge home team city coords to assign lat lon to each game
+games2 <- games %>%
+  left_join(city_coords %>% select(city, lat_home = lat, lon_home = long),
+            by = c("hometeamCity" = "city")) %>%
+  # Then merge away team city coords
+  left_join(city_coords %>% select(city, lat_away = lat, lon_away = long),
+            by = c("awayteamCity" = "city"))
+
+#Count NAs in each column for games2
+na_counts <- games2 %>%
+  summarise(
+    na_lat_home = sum(is.na(lat_home)),
+    na_lon_home = sum(is.na(lon_home)),
+    na_lat_away = sum(is.na(lat_away)),
+    na_lon_away = sum(is.na(lon_away))
+  )
+
+print(na_counts)
+
+#Find which rows have any NAs in those columns for games2
+rows_with_na <- games2 %>%
+  filter(
+    is.na(lat_home) | is.na(lon_home) | is.na(lat_away) | is.na(lon_away)
+  ) %>%
+  select(hometeamCity, awayteamCity, lat_home, lon_home, lat_away, lon_away)
+
+
+## 71 Rows with NA lat lon, all due to Tri-cities, which i don't think even exists anymore.
+## We can ignore these; they will be dropped from the regression automatically
+
+games3 <- games2 %>%
+  mutate(
+    dist_meters = distHaversine(cbind(lon_home, lat_home),
+                                cbind(lon_away, lat_away)),
+    dist_miles = dist_meters * 0.000621371,
+    year = as.numeric(substr(gameDate, 1, 4)),
+    winning_team = case_when(
+      winner == awayteamId ~ "away",
+      winner == hometeamId ~ "home",
+      TRUE ~ NA_character_
+    ),
+    
+    # ------------ Longitude-based zones ----------
+    home_zone = case_when(
+      lon_home < -105 ~ "West",
+      lon_home > -90  ~ "East",
+      TRUE            ~ "Central"   # in between → Central
+    ),
+    away_zone = case_when(
+      lon_away < -105 ~ "West",
+      lon_away > -90  ~ "East",
+      TRUE            ~ "Central"
+    )
+  )
+
+
+games4 <- games3 %>%
+  filter(gameType == "Regular Season", !is.na(dist_miles)) %>%
+  mutate(
+    away_travel = case_when(
+      away_zone == "East"    & home_zone == "West"    ~ "East to West",
+      away_zone == "West"    & home_zone == "East"    ~ "West to East",
+      away_zone == "East"    & home_zone == "Central" ~ "East to Central",
+      away_zone == "Central" & home_zone == "East"    ~ "Central to East",
+      away_zone == "Central" & home_zone == "West"    ~ "Central to West",
+      away_zone == "West"    & home_zone == "Central" ~ "West to Central",
+      away_zone == home_zone                         ~ "In-Zone",
+      TRUE                                          ~ "Other/International"
+    ),
+    away_travel_high = factor(
+      case_when(
+        away_travel == "East to West" ~ "East to West",
+        away_travel == "West to East" ~ "West to East",
+        TRUE                          ~ "Neither"
+      ),
+      levels = c("Neither", "West to East", "East to West")
+    )
+  )
+
+set.seed(123)   # ensures reproducibility
+
+# total number of rows
+n <- nrow(games4)
+
+# sample 30% of the rows for EDA
+eda_index <- sample(1:n, size = floor(0.30 * n), replace = FALSE)
+
+# create the two datasets
+games4_eda   <- games4[eda_index, ]
+games4_model <- games4[-eda_index, ]
+
+
+lm_model_1 <- lm(point_diff ~ dist_miles, data = games4_model)
+
+lm_model_2 <- lm(point_diff ~ dist_miles + away_travel_high, data = games4_model)
+
+lm_model_3 <- lm(point_diff ~ dist_miles + away_travel_high + attendance, data = games4_model)
+
+lm_model_4 <- lm(point_diff ~ dist_miles + away_travel_high + attendance + year, data = games4_model)
 ```
 
 \newpage
@@ -80,12 +278,15 @@ To capture the relationship between away team travel and game outcomes, the foll
 
 Large sample linear model
 
-```{r linear_regression, results='asis', message=FALSE, warning=FALSE}
-lm_model4 <- lm(point_diff ~ dist_miles + away_travel_high + attendance + year, data = games4_model)
-
+```{r linear_regression, echo = FALSE, results='asis', message=FALSE, warning=FALSE}
 
 stargazer(
-  model_1, 
+  lm_model_1, lm_model_2, lm_model_3, lm_model_4,
+  header = FALSE,
+  no.space = TRUE, 
+  column.sep.width = "0.5pt", 
+  omit.stat = "f",
+  font.size = "footnotesize",
   type="latex",
   title="Linear Regression Co-efficients for Point Differential Against Input Variables", 
   dep.var.labels = "Point Differential", 
@@ -94,7 +295,7 @@ stargazer(
                        "East to West Direction",
                        "Game Attendance",
                        "Year",
-                       "Other Travel (Baseline)"), 
+                       "Constant"), 
   digits=3)
 ```
 
