@@ -272,6 +272,8 @@ y = "Home Win Percentage (%)"
 p6+p7 + plot_layout(ncol = 2)
 ```
 
+**Figure 2:** Residuals and home win percentage over time.
+
 ```{r cov_data_clean, echo = FALSE, results='asis', message=FALSE, warning=FALSE, fig.width=150}
 cov_cor_cleaned_data <- na.omit(games[, c("dist_miles", "year", "attendance", "away_travel_high", "point_diff")])
 cov_cor_cleaned_data$travel_direction <- as.numeric(cov_cor_cleaned_data$away_travel_high)
