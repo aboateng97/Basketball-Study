@@ -118,6 +118,16 @@ games3 <- games2 %>%
 games_clean <- games3 %>%
   filter(gameType == "Regular Season", !is.na(dist_miles))
 
+# Removing anomalies for distance and attendance
+games3 <- games3 %>%
+  mutate(attendance = as.numeric(attendance)) %>%
+  filter(
+    !is.na(dist_miles),
+    dist_miles <= 3500,
+    !is.na(attendance),
+    attendance <= 100000
+  )
+
 # Splitting into EDA (30%) and modeling (70%) data sets
 set.seed(123)   # ensures reproducibility
 n <- nrow(games3)

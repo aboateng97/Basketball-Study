@@ -37,13 +37,13 @@ games <- readRDS("../data/processed/games_clean_model.rds")
 
 \newpage
 
-# **Introduction**
+## **Introduction**
 
 Professional sports leagues such as the NBA require teams to travel frequently across large geographic distances, often across multiple time zones, within tightly scheduled seasons. Travel has long been discussed as a potential contributor to competitive imbalance, fatigue, and home-court advantage, yet the extent to which travel-related factors are reflected in game outcomes remains unclear. Descriptively characterizing how performance varies with travel conditions offers insight into the structure of competition in the league, independent of prediction or causal claims.
 
 We examine the relationship between travel distance and game performance in the NBA, focusing on whether the miles an away team travels affect point differential (away team score minus home team score). This question has practical relevance for multiple stakeholders: coaches and team administrators can inform scheduling and travel logistics; players and athletic trainers can better anticipate physical demands; and sports bettors can refine predictions. While prior research, notably Deddens and Steenland (1997), found limited evidence of consistent travel effects in regular season NBA games, we revisit this question using a more comprehensive data set spanning seven decades. We also explore whether factors such as travel direction or game attendance moderate the relationship between distance traveled and performance.
 
-# Data
+## Data
 
 *Data Source -* The data set was sourced from Kaggle’s “NBA Dataset - Box Scores & Stats”. This data set contains data on NBA games from 1947 to 2025 and is updated regularly with official statistics from the NBA’s website. It contains 72,278 observations, with a unit of observation being a single game, and 17 variables such as game attendance and points for each team.
 
@@ -68,7 +68,6 @@ games_eda <- readRDS("../data/processed/games_clean_eda.rds")
 a1 <- ggplot(games_eda, aes(x = dist_miles, y = point_diff)) +
   geom_point(alpha = 0.5, size = 0.5, color = "blue") +
   geom_smooth(method = "lm", color = "red", se = TRUE) +
-  xlim(0, 3000) +
   labs(
     x = "Distance Travelled (miles)",
     y = "Point Differential",
@@ -87,7 +86,6 @@ a2 <- ggplot(games_eda, aes(x = year, y = point_diff)) +
 a3 <- ggplot(games_eda, aes(x = attendance, y = point_diff)) +
   geom_point(alpha = 0.5, size = 0.5, color = "blue") +  # tiny, semi-transparent points
   geom_smooth(method = "lm", color = "red", se = TRUE) +      # regression line with confidence interval
-  xlim(0, 75000) +
   labs(
     x = "Attendance",
     y = "Point Differential",
@@ -109,7 +107,7 @@ a1 + a2 + a3 + a4 + plot_layout(ncol = 2)
 
 To take a first pass at the data, we examine the relationships between each individual predictor variable (Distance Traveled, Year, Attendance, and Travel Direction) and the response variable (Point Differential). The scatter plot between Point Differential and Distance Traveled shows no clear trend, suggesting a minimal relationship between the two variables. This indicates that the distance teams travel doesn’t have a strong impact on the point differential, and other factors likely contribute more significantly to game outcomes. Next, the scatter plot between Point Differential and Year displays that the point differential range has been slowly increasing as the year has increased. This may indicate that the evolution of the NBA has led to more pronounced wins and losses over time, suggesting that disparities in team performance have become more significant as the years have passed. Next, the scatter plot between Point Differential and Attendance shows that games with a higher attendance often have a greater point differential spread, with games around 20,000 in attendance being more likely to feature a greater margin of victory or defeat than those with attendance ranging from 0 to 10,000. Finally, the box plots exhibiting Point Differential between the three travel direction buckets indicate that West to East travel has an average higher point differential than Neither or East to West. This suggests that teams traveling from West to East may face additional challenges that impact their performance, possibly due to factors such as time zone changes or fatigue.
 
-# **Modeling**
+## **Modeling**
 
 ```{r linear_regression_models, include = FALSE}
 
@@ -126,10 +124,13 @@ lm_model_4 <- lm(point_diff ~ dist_miles + away_travel_high + attendance + year,
 
 Given the large sample size, we use a linear regression model to examine the relationship between Point Differential and predictors such as Distance Traveled, Travel Direction, Attendance, and Year. The regression table below shows four models that progressively add more predictors.
 
-1.  Model 1: The first model includes only Distance Traveled. The coefficient for this variable is statistically insignificant, suggesting that Distance Traveled has little effect on Point Differential.
-2.  Model 2: In this model, we add Travel Direction (with "Neither" as the baseline). The coefficients for West to East and East to West are statistically significant, indicating that teams traveling from West to East tend to have a higher point differential, while those traveling East to West perform worse.
-3.  Model 3: Game Attendance is introduced. Although it is statistically significant, the effect is small, suggesting that larger crowds slightly affect the point differential but with limited practical significance.
-4.  Model 4: Finally, we add Year based on EDA findings, and it shows a statistically significant positive effect, implying that point differentials have increased over time.
+*Model 1*: The first model includes only Distance Traveled. The coefficient for this variable is statistically insignificant, suggesting that Distance Traveled has little effect on Point Differential.
+
+*Model 2*: In this model, we add Travel Direction (with "Neither" as the baseline). The coefficients for West to East and East to West are statistically significant, indicating that teams traveling from West to East tend to have a higher point differential, while those traveling East to West perform worse.
+
+*Model 3*: Game Attendance is introduced. Although it is statistically significant, the effect is small, suggesting that larger crowds slightly affect the point differential but with limited practical significance.
+
+*Model 4*: Finally, we add Year based on EDA findings, and it shows a statistically significant positive effect, implying that point differentials have increased over time.
 
 ```{r model, echo = FALSE, results='asis', message=FALSE, warning=FALSE}
 
@@ -160,27 +161,25 @@ Since the model is a large sample linear model, the required assumptions are as 
 
 *A Unique Best Linear Predictor Exists -* Covariance matrices (appendix figure x) show finite variance and no perfect collinearity, indicating that the distribution does not have heavy tails. Additionally, no variable is a linear combination of another variable and the correlation matrices (appendix figure y) confirms that all predictor variables are sufficiently independent for OLS estimation.
 
-### **Model Results & Interpretation**
+## **Model Results**
 
-The final model (Model 4) is statistically significant by means of the f-statistic p-value being less than 2.2e-16. Within the model, the variable distance traveled, has a coefficient of -0.0002, meaning that all else equal, for each additional mile traveled by the away team, point differential decreases by .00002. The effect of distance on point differential remains not statistically significant since the p-value is greater than 0.05 and the results are not practically significant since even the longest normal flight from Miami to Portland which is about 3000 miles, only correlates to a point differential decrease of 0.6 points.
+*Interpretation -* The final model (Model 4) is statistically significant by means of the f-statistic p-value being less than 2.2e-16. Within the model, the variable distance traveled, has a coefficient of -0.0002, meaning that all else equal, for each additional mile traveled by the away team, point differential decreases by .00002. The effect of distance on point differential remains not statistically significant since the p-value is greater than 0.05 and the results are not practically significant since even the longest normal flight from Miami to Portland which is about 3000 miles, only correlates to a point differential decrease of 0.6 points.
 
 In contrast, travel direction exhibits statistically significant effects, with West-to-East travel associated with higher point differentials for away teams, suggesting that time-zone alignment may matter more than simply distance traveled. Attendance also has a small but statistically significant effect on point differential, while the positive coefficient on year indicates an upward trend in point differentials over time. Overall, the results suggest that while geographic orientation and temporal trends influence competitive outcomes, travel distance alone is not a primary driver of game performance.
 
-### **Scope & Limitations**
+*Scope & Limitations -* This analysis is descriptive in nature and does not support causal claims about the effect of travel on NBA game outcomes. Games are not fully independent, as team performance may be correlated across time due to persistent team quality, injuries, and broader league dynamics. Additionally, while geodesic distance captures the physical separation between teams, it does not directly measure fatigue, rest, travel conditions, or circadian disruption, such as back-to-back games or sleep loss from changing time zones. Finally, structural changes in the NBA over the seven-decade sample period, including standardization of courts, more movement of players between teams, and travelling being less strenuous, may influence both the distribution of point differentials and their relationship with travel-related variables.
 
-This analysis is descriptive in nature and does not support causal claims about the effect of travel on NBA game outcomes. Games are not fully independent, as team performance may be correlated across time due to persistent team quality, injuries, and broader league dynamics. Additionally, while geodesic distance captures the physical separation between teams, it does not directly measure fatigue, rest, travel conditions, or circadian disruption, such as back-to-back games or sleep loss from changing time zones. Finally, structural changes in the NBA over the seven-decade sample period, including standardization of courts, more movement of players between teams, and travelling being less strenuous, may influence both the distribution of point differentials and their relationship with travel-related variables.
-
-# **Conclusion**
+## **Conclusion**
 
 Our analysis reveals that distance traveled by away teams does not significantly affect point differential, suggesting that travel distance also is not a major determinant of game performance. However, travel direction matters: West Coast teams traveling to the East Coast experience a measurable advantage, while East-to-West effects are weaker and less consistent. Consistent with our exploratory analysis, home-court advantage has been declining over time, with away teams winning a larger share of games in recent years. These findings provide important insights into travel and performance dynamics in the NBA, highlighting patterns that may inform scheduling, team preparation for games, and other factors, while emphasizing the limits of causal interpretation due to data and model constraints.
 
 \newpage
 
-# Citations
+## Citations
 
-# Appendix
+## Appendix
 
-Link to the Dataset : https://www.kaggle.com/datasets/eoinamoore/historical-nba-data-and-player-box-scores?utm_source=chatgpt.com&select=Games.csv
+Link to the Dataset : <https://www.kaggle.com/datasets/eoinamoore/historical-nba-data-and-player-box-scores>
 
 ```{r test_graphs, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 9, fig.height=9}
 lm_model_4 <- lm(point_diff ~ dist_miles + away_travel_high + attendance + year, data = games)
@@ -198,6 +197,7 @@ p1 <- ggplot(games, aes(x = point_diff, y = fitted_values)) +
 p2 <- ggplot(games, aes(x = dist_miles, y = fitted_values)) +
   geom_point(alpha = 0.5, size = 1, color = "blue") +  # Raw data points
   geom_smooth(method = "lm", color = "red", se = FALSE) +  # Regression line
+  ylim(-15, 2) +
   labs(
     title = "Predicted Point Difference vs. Distance Travelled",
     x = "Distance Travelled (miles)",
@@ -207,6 +207,7 @@ p2 <- ggplot(games, aes(x = dist_miles, y = fitted_values)) +
 p3 <- ggplot(games, aes(x = year, y = fitted_values)) +
   geom_point(alpha = 0.5, size = 1, color = "blue") +  # Raw data points
   geom_smooth(method = "lm", color = "red", se = FALSE) +  # Regression line
+  ylim(-15, 2) +
   labs(
     title = "Predicted Point Difference vs. Year",
     x = "Year",
@@ -216,6 +217,8 @@ p3 <- ggplot(games, aes(x = year, y = fitted_values)) +
 p4 <- ggplot(games, aes(x = attendance, y = fitted_values)) +
   geom_point(alpha = 0.5, size = 1, color = "blue") +  # Raw data points
   geom_smooth(method = "lm", color = "red", se = FALSE) +  # Regression line
+  ylim(-15, 2) +
+
   labs(
     title = "Predicted Point Difference vs. Attendance",
     x = "Attendance",
@@ -226,14 +229,10 @@ p5 <- ggplot(games, aes(x = away_travel_high, y = fitted_values)) +
   geom_boxplot(fill = "lightblue", color = "darkblue") +
   labs(title = "Predicted Point Difference vs. Away Travel High", x = "Away Travel High", y = "Predicted Point Difference")
 
-p1+p2+p3+p4+p5 + plot_layout(ncol = 2)
-```
-
-```{r residual_fitted, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 9, fig.height=9}
 games$fitted_values <- predict(lm_model_4, newdata = games)
 games$residuals <- games$point_diff - games$fitted_values
 
-ggplot(games, aes(x = fitted_values, y = residuals)) +
+p6 <- ggplot(games, aes(x = fitted_values, y = residuals)) +
   geom_point(alpha = 0.5, size = 1, color = "blue") +  # Raw data points
   geom_hline(yintercept = 0, color = "red") +  # Add a horizontal line at y = 0
   xlim(-12, 2) +
@@ -242,22 +241,21 @@ ggplot(games, aes(x = fitted_values, y = residuals)) +
     x = "Predicted Values (Fitted)",
     y = "Residuals"
   ) 
+
+p1+p2+p3+p4+p5+p6 + plot_layout(ncol = 2)
 ```
 
 NOTE: THIS GRAPH HAS A WHITE LINE BECAUSE 0 VALUE IS IMPOSSIBLE NBA GAMES CAN'T BE TIED AND WILL ALWAYS GO INTO OVERTIME UNTIL SOMEONE WINS
 
-```{r,  echo = FALSE, results='asis', message=FALSE, warning=FALSE, fig.width=150}
-
+```{r cov_data_clean, echo = FALSE, results='asis', message=FALSE, warning=FALSE, fig.width=150}
 cov_cor_cleaned_data <- na.omit(games[, c("dist_miles", "year", "attendance", "away_travel_high", "point_diff")])
 cov_cor_cleaned_data$travel_direction <- as.numeric(cov_cor_cleaned_data$away_travel_high)
-cov_matrix <- cov(cov_cor_cleaned_data[, c("dist_miles", "year", "attendance","travel_direction", "point_diff")])
-# Format the covariance matrix for better alignment
-print(cov_matrix, digits =3)
-
 ```
 
-```{r,  echo = FALSE, results='asis', message=FALSE, warning=FALSE}
-cor_matrix <- cor(cov_cor_cleaned_data[, c("dist_miles", "year", "attendance","travel_direction", "point_diff")])
-print(cor_matrix,digits =3)
+```{r covariance_matrix, echo = FALSE, results='asis', message=FALSE, warning=FALSE, fig.width=150}
+cov(cov_cor_cleaned_data[, c("dist_miles", "year", "attendance","travel_direction", "point_diff")])
+```
 
+```{r correlation_matrix,  echo = FALSE, results='asis', message=FALSE, warning=FALSE}
+cor(cov_cor_cleaned_data[, c("dist_miles", "year", "attendance","travel_direction", "point_diff")])
 ```
