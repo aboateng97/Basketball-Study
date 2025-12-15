@@ -1,7 +1,5 @@
-getwd()
-setwd("~/Downloads")
 # Load the CSV file
-games <- read.csv("/Users/afrahboateng/Downloads/Games.csv")
+games <- read.csv("../data/raw/Games.csv")
 
 # Check that it loaded
 head(games)
