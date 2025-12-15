@@ -154,17 +154,21 @@ stargazer(
 
 ### **Model Assumptions**
 
-#### Independent & Identically Distributed
+Since the model is a large sample linear model, the required assumptions are as follows:
 
-Games are not fully independent, as team performance may be correlated across seasons. To partially address this, we include year as a numeric covariate, capturing temporal trends in point differentials.
+#### 1. Independent & Identically Distributed Errors
 
-#### A Unique BLP Exists
+The model assumes that errors are independent and identically distributed. However, games are not fully independent, as the performance of one team can impact the performance of another team, especially in a competitive context. For example, a team's performance in one game might be influenced by the strength of its opponent, which introduces a form of dependence between teams' performances across seasons. To partially address this, we include year as a numeric covariate, which captures temporal trends in point differentials and helps account for time-dependent factors.
 
-Covariance matrices (appendix figure x) show finite variance and no perfect collinearity. This means the distribution does not have heavy tails. Additionally, no variable is a linear combination of another variable and the correlation matrices (appendix figure y) confirms that all predictor variables are sufficiently independent for OLS estimation.
+#### 2. A Unique Best Linear Predictor Exists
+
+Covariance matrices (appendix figure x) show finite variance and no perfect collinearity, indicating that the distribution does not have heavy tails. Additionally, no variable is a linear combination of another variable and the correlation matrices (appendix figure y) confirms that all predictor variables are sufficiently independent for OLS estimation.
 
 ### **Model Results & Interpretation**
 
-TBD
+The final model (model 4) is statistically significant by means of the f-statistic p-value being less than 2.2e-16. Within the model, the variable distance traveled, has a coefficient of -0.0002, meaning that all else equal, for each additional mile traveled by the away team, point differential decreases by .00002. The effect of distance on point differential remains not statistically significant since the p-value is greater than 0.05 and the results are not practically significant since even the longest normal flight from Miami to Portland which is about 3000 miles, only correlates to a point differential decrease of 0.6 points.
+
+NOT FINISHED
 
 ### **Scope & Limitations**
 
@@ -179,6 +183,8 @@ Our analysis reveals that distance traveled by away teams does not significantly
 # Citations
 
 # Appendix
+
+Link to the Dataset : https://www.kaggle.com/datasets/eoinamoore/historical-nba-data-and-player-box-scores?utm_source=chatgpt.com&select=Games.csv
 
 ```{r test_graphs, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 9, fig.height=9}
 lm_model_4 <- lm(point_diff ~ dist_miles + away_travel_high + attendance + year, data = games)
