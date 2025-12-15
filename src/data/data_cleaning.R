@@ -125,6 +125,10 @@ eda_index <- sample(1:n, size = floor(0.30 * n), replace = FALSE)
 games_clean_eda   <- games3[eda_index, ]
 games_clean_model <- games3[-eda_index, ]
 
-# Save cleaned data set
+# Save cleaned data set to RDS
 saveRDS(games_clean_eda, "data/processed/games_clean_eda.rds")
 saveRDS(games_clean_model, "data/processed/games_clean_model.rds")
+
+# Save cleaned data set to CSV
+write.csv(games_clean_eda, "data/processed/games_clean_eda.csv")
+write.csv(games_clean_model, "data/processed/games_clean_model.csv")

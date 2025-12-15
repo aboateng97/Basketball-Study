@@ -24,7 +24,7 @@ library(geosphere)
 ```
 
 ```{r load_data, include = FALSE}
-games <- read.csv("../data/processed/game_clean_model.rds")
+games <- read.csv("../data/processed/game_clean_model.csv")
 ```
 
 \newpage
@@ -70,7 +70,7 @@ lm_model_4 <- lm(point_diff ~ dist_miles + away_travel_high + attendance + year,
 
 Large sample linear model
 
-```{r model_results, echo = FALSE, results='asis', message=FALSE, warning=FALSE}
+```{r model, echo = FALSE, results='asis', message=FALSE, warning=FALSE}
 
 stargazer(
   lm_model_1, lm_model_2, lm_model_3, lm_model_4,
