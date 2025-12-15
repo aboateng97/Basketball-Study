@@ -162,9 +162,9 @@ Since the model is a large sample linear model, the required assumptions are as 
 
 ### **Model Results & Interpretation**
 
-The final model (model 4) is statistically significant by means of the f-statistic p-value being less than 2.2e-16. Within the model, the variable distance traveled, has a coefficient of -0.0002, meaning that all else equal, for each additional mile traveled by the away team, point differential decreases by .00002. The effect of distance on point differential remains not statistically significant since the p-value is greater than 0.05 and the results are not practically significant since even the longest normal flight from Miami to Portland which is about 3000 miles, only correlates to a point differential decrease of 0.6 points.
+The final model (Model 4) is statistically significant by means of the f-statistic p-value being less than 2.2e-16. Within the model, the variable distance traveled, has a coefficient of -0.0002, meaning that all else equal, for each additional mile traveled by the away team, point differential decreases by .00002. The effect of distance on point differential remains not statistically significant since the p-value is greater than 0.05 and the results are not practically significant since even the longest normal flight from Miami to Portland which is about 3000 miles, only correlates to a point differential decrease of 0.6 points.
 
-NOT FINISHED
+In contrast, travel direction exhibits statistically significant effects, with West-to-East travel associated with higher point differentials for away teams, suggesting that time-zone alignment may matter more than simply distance traveled. Attendance also has a small but statistically significant effect on point differential, while the positive coefficient on year indicates an upward trend in point differentials over time. Overall, the results suggest that while geographic orientation and temporal trends influence competitive outcomes, travel distance alone is not a primary driver of game performance.
 
 ### **Scope & Limitations**
 
