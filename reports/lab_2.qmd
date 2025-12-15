@@ -21,10 +21,18 @@ library(stargazer)
 library(sandwich)
 library(tidygeocoder)
 library(geosphere)
+
+theme(
+  plot.title = element_text(size = 10),
+  axis.title = element_text(size = 9),
+  axis.text = element_text(size = 8)
+)
+
+theme_set(theme_minimal())
 ```
 
 ```{r load_data, include = FALSE}
-games <- read.csv("../data/processed/game_clean_model.csv")
+games <- read.csv("../data/processed/games_clean_model.csv")
 ```
 
 \newpage
@@ -44,6 +52,54 @@ We propose to examine the relationship between travel distance and game performa
 This categorical variable contains 3 possibilities: travel from east to west coast, travel from west to east coast or neither, which encompasses all travel within the same region or travel between the central regions of the US and coasts. The point differential was calculated by subtracting the home team’s final points from the away team’s final points, so that a positive point differential translates to a win for the away team. Lastly, the latitude and longitude of cities were calculated using geocodes from OpenStreetMap based on the cleaned city name for each team. 
 
 After wrangling, the final data set consisted of 65,467 games, of which 30% (19,640) were randomly selected for exploratory data analysis and 70% (45,827) were set aside for modeling.
+
+```{r eda_graphs, echo=FALSE, warning=FALSE, message=FALSE, fig.width = 9, fig.height=6}
+
+games_eda <- read.csv("../data/processed/games_clean_eda.csv")
+
+a1 <- ggplot(games_eda, aes(x = dist_miles, y = point_diff)) +
+  geom_point(alpha = 0.5, size = 0.5, color = "blue") +
+  geom_smooth(method = "lm", color = "red", se = TRUE) +
+  xlim(0, 3000) +
+  labs(
+    x = "Distance Travelled (miles)",
+    y = "Point Differential",
+    title = "Point Differential vs. Distance Travelled"
+  )
+
+a2 <- ggplot(games_eda, aes(x = year, y = point_diff)) +
+  geom_point(alpha = 0.5, size = 0.5, color = "blue") +
+  geom_smooth(method = "lm", color = "red", se = TRUE) +
+  labs(
+    x = "Year",
+    y = "Point Differential",
+    title = "Point Differential vs. Year"
+  )
+
+a3 <- ggplot(games_eda, aes(x = attendance, y = point_diff)) +
+  geom_point(alpha = 0.5, size = 0.5, color = "blue") +  # tiny, semi-transparent points
+  geom_smooth(method = "lm", color = "red", se = TRUE) +      # regression line with confidence interval
+  xlim(0, 75000) +
+  labs(
+    x = "Attendance",
+    y = "Point Differential",
+    title = "Point Differential vs. Attendance"
+  )
+
+a4 <- ggplot(games_eda, aes(x = away_travel_high, y = point_diff)) +
+  geom_boxplot(fill = "lightblue", color = "darkblue") +  # Boxplot with color
+  labs(
+    x = "Away Travel High",
+    y = "Point Differential",
+    title = "Point Differential vs. Away Travel High"
+  )
+
+a1 + a2 + a3 + a4 + plot_layout(ncol = 2)
+```
+
+**Figure 1:** EDA
+
+*Exploratorary Data Analysis - section on point differential year relationship /graph interpretation above*
 
 *Operationalization -* To capture the relationship between away team travel and game outcomes, the following variables were included in our analysis:
 
@@ -119,8 +175,66 @@ Our analysis reveals that distance traveled by away teams does not significantly
 
 # Appendix
 
-```{r example_cell, echo=FALSE, warning=FALSE, message=FALSE, fig.width = 7, fig.height=2.6}
+```{r test_graphs, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 9, fig.height=9}
+lm_model_4 <- lm(point_diff ~ dist_miles + away_travel_high + attendance + year, data = games)
+games$fitted_values <- predict(lm_model_4, newdata = games)
 
+p1 <- ggplot(games, aes(x = point_diff, y = fitted_values)) +
+  geom_point(alpha = 0.5, size = 1, color = "blue") +  # Raw data points
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Regression line
+  labs(
+    title = "Actual Point Difference vs. Predicted Point Difference",
+    x = "Distance Travelled (miles)",
+    y = "Actual Point Difference"
+  )
+
+p2 <- ggplot(games, aes(x = dist_miles, y = fitted_values)) +
+  geom_point(alpha = 0.5, size = 1, color = "blue") +  # Raw data points
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Regression line
+  labs(
+    title = "Predicted Point Difference vs. Distance Travelled",
+    x = "Distance Travelled (miles)",
+    y = "Predicted Point Difference"
+  )
+
+p3 <- ggplot(games, aes(x = year, y = fitted_values)) +
+  geom_point(alpha = 0.5, size = 1, color = "blue") +  # Raw data points
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Regression line
+  labs(
+    title = "Predicted Point Difference vs. Year",
+    x = "Year",
+    y = "Predicted Point Difference"
+  )
+
+p4 <- ggplot(games, aes(x = attendance, y = fitted_values)) +
+  geom_point(alpha = 0.5, size = 1, color = "blue") +  # Raw data points
+  geom_smooth(method = "lm", color = "red", se = FALSE) +  # Regression line
+  labs(
+    title = "Predicted Point Difference vs. Attendance",
+    x = "Attendance",
+    y = "Predicted Point Difference"
+  )
+
+p5 <- ggplot(games, aes(x = away_travel_high, y = fitted_values)) +
+  geom_boxplot(fill = "lightblue", color = "darkblue") +
+  labs(title = "Predicted Point Difference vs. Away Travel High", x = "Away Travel High", y = "Predicted Point Difference")
+
+p1+p2+p3+p4+p5 + plot_layout(ncol = 2)
 ```
 
-**Figure 1:** Number of respondents identifying with each party description.
+```{r residual_fitted, echo = FALSE, message=FALSE, warning=FALSE, fig.width = 9, fig.height=9}
+games$fitted_values <- predict(lm_model_4, newdata = games)
+games$residuals <- games$point_diff - games$fitted_values
+
+ggplot(games, aes(x = fitted_values, y = residuals)) +
+  geom_point(alpha = 0.5, size = 1, color = "blue") +  # Raw data points
+  geom_hline(yintercept = 0, color = "red") +  # Add a horizontal line at y = 0
+  xlim(-12, 2) +
+  labs(
+    title = "Residuals vs Predicted Values",
+    x = "Predicted Values (Fitted)",
+    y = "Residuals"
+  ) 
+```
+
+NOTE: THIS GRAPH HAS A WHITE LINE BECAUSE 0 VALUE IS IMPOSSIBLE NBA GAMES CAN'T BE TIED AND WILL ALWAYS GO INTO OVERTIME UNTIL SOMEONE WINS
