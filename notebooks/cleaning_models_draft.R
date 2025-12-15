@@ -8,6 +8,7 @@ library(dplyr)
 library(tidygeocoder)
 library(geosphere)
 library(ggplot2)
+library(tidyverse)
 
 games <- games %>%
   mutate(point_diff = awayScore - homeScore)

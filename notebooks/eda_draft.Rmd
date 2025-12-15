@@ -138,10 +138,10 @@ cat("Average point differential:", mean(games$point_diff, na.rm = TRUE), "\n")
 ``` {r linear_1}
 model_1 <- lm(point_diff ~ distance, data = games)
 
-model_1
+summary(model_1)
 ```
 ``` {r linear_2}
 model_2 <- lm(point_diff ~ distance + attendance, data = games)
 
-model_2
+summary(model_2)
 ```
