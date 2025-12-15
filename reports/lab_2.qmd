@@ -39,9 +39,9 @@ games <- readRDS("../data/processed/games_clean_model.rds")
 
 # **Introduction**
 
-Professional sports leagues such as the NBA require teams to travel frequently across large geographic distances, often across multiple time zones, within tightly scheduled seasons. Travel has long been discussed as a potential contributor to competitive imbalance, fatigue, and home-court advantage, yet the extent to which travel-related factors are reflected in game outcomes remains unclear. Descriptively characterizing how performance varies with travel conditions provides insight into the structure of competition in the league, independent of any attempt to predict outcomes or identify causal mechanisms.\
+Professional sports leagues such as the NBA require teams to travel frequently across large geographic distances, often across multiple time zones, within tightly scheduled seasons. Travel has long been discussed as a potential contributor to competitive imbalance, fatigue, and home-court advantage, yet the extent to which travel-related factors are reflected in game outcomes remains unclear. Understanding these patterns can help coaches optimize scheduling and travel logistics, assist players and athletic trainers in preparing for physical demands, and inform sports bettors’ predictions.\
 
-We propose to examine the relationship between travel distance and game performance in the NBA, specifically whether the number of miles an away team travels affects point differential (away team score minus home team score). This research question has practical implications for multiple stakeholders: coaches and team administrators can use these insights for scheduling and travel logistics; players and athletic trainers can better prepare for the physical demands of travel; and sports bettors can make more informed predictions. While previous research, notably Deddens and Steenland (1997), found few consistent effects of travel distance in their analysis of regular season NBA games, we aim to revisit this question with a more comprehensive data set spanning seven decades. Additionally, we will explore related questions such as whether travel direction or game attendance levels moderate the relationship between distance traveled and performance.
+We propose to examine whether the distance an away team travels affects point differential (away team score minus home team score). Our work builds upon previous research, including Deddens and Steenland (1997),  which found limited effects of travel distance in their analysis of regular season NBA games. We aim to revisit this question by leveraging a comprehensive dataset spanning across seven decades to provide a more complete picture of travel-related performance patterns.
 
 # Data
 
@@ -265,3 +265,4 @@ cor_matrix <- cor(cov_cor_cleaned_data[, c("dist_miles", "year", "attendance","t
 print(cor_matrix,digits =3)
 
 ```
+
