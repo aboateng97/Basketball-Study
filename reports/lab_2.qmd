@@ -232,45 +232,25 @@ lm_model_4 <- lm(point_diff ~ dist_miles + away_travel_high + attendance + year,
 
 Professional sports leagues such as the NBA require teams to travel frequently across large geographic distances, often across multiple time zones, within tightly scheduled seasons. Travel has long been discussed as a potential contributor to competitive imbalance, fatigue, and home-court advantage, yet the extent to which travel-related factors are reflected in game outcomes remains unclear. Descriptively characterizing how performance varies with travel conditions provides insight into the structure of competition in the league, independent of any attempt to predict outcomes or identify causal mechanisms.\
 
-We propose to examine the relationship between travel distance and game performance in the NBA, specifically whether the number of miles an away team travels affects point differential (away team score minus home team score). This research question has practical implications for multiple stakeholders: coaches and team administrators can use these insights for scheduling and travel logistics; players and athletic trainers can better prepare for the physical demands of travel; and sports bettors can make more informed predictions. While previous research, notably Deddens and Steenland (1997),  found few consistent effects of travel distance in their analysis of regular season NBA games, we aim to revisit this question with a more comprehensive dataset spanning seven decades. Additionally, we will explore related questions such as whether travel direction or game attendance levels moderate the relationship between distance travelled and performance.
+We propose to examine the relationship between travel distance and game performance in the NBA, specifically whether the number of miles an away team travels affects point differential (away team score minus home team score). This research question has practical implications for multiple stakeholders: coaches and team administrators can use these insights for scheduling and travel logistics; players and athletic trainers can better prepare for the physical demands of travel; and sports bettors can make more informed predictions. While previous research, notably Deddens and Steenland (1997), found few consistent effects of travel distance in their analysis of regular season NBA games, we aim to revisit this question with a more comprehensive data set spanning seven decades. Additionally, we will explore related questions such as whether travel direction or game attendance levels moderate the relationship between distance traveled and performance.
 
 # Data
 
-### Data Source
+*Data Source -* The data set was sourced from Kaggle’s “NBA Dataset - Box Scores & Stats”. This data set contains data on NBA games from 1947 to 2025 and is updated regularly with official statistics from the NBA’s website. It contains 72,278 observations, with a unit of observation being a single game, and 17 variables such as game attendance and points for each team.
 
-The dataset was sourced from Kaggle’s “NBA Dataset - Box Scores & Stats”. This dataset contains data on NBA games from 1947 to 2025 and is updated regularly with official statistics from the NBA’s website. It contains 72,278 observations, with a unit of observation being a single game, and 17 variables such as game attendance and points for each team.
-
-### **Data Wrangling**
-
-The dataset was restricted to regular season games, reducing the size by 10%. 71 games were removed where the city was indeterminate, such as the historic Tri-State team, a midwest team from the early years of the NBA that was not tied to a specific city. For each unit of observation, seven additional variables were calculated: (1) the point differential between the away and home teams, (2) home team latitude, (3) home team longitude, (4) away team latitude, (5) away team longitude, (6) the geodesic distance between the home and away team cities, and finally (7) a categorical variable describing whether away teams were travelling from the East Coast to the West Coast. 
+*Data Wrangling -* The data set was restricted to regular season games, reducing the size by 10%. 71 games were removed where the city was indeterminate, such as the historic Tri-State team, a mid-west team from the early years of the NBA that was not tied to a specific city. For each unit of observation, seven additional variables were calculated: (1) the point differential between the away and home teams, (2) home team latitude, (3) home team longitude, (4) away team latitude, (5) away team longitude, (6) the geodesic distance between the home and away team cities, and finally (7) a categorical variable describing whether away teams were travelling from the East Coast to the West Coast. 
 
 This categorical variable contains 3 possibilities: travel from east to west coast, travel from west to east coast or neither, which encompasses all travel within the same region or travel between the central regions of the US and coasts. The point differential was calculated by subtracting the home team’s final points from the away team’s final points, so that a positive point differential translates to a win for the away team. Lastly, the latitude and longitude of cities were calculated using geocodes from OpenStreetMap based on the cleaned city name for each team. 
 
-After wrangling, the final dataset consisted of 65,467 games, of which 30% (19,640) were randomly selected for exploratory data analysis and 70% (45,827) were set aside for modeling.
+After wrangling, the final data set consisted of 65,467 games, of which 30% (19,640) were randomly selected for exploratory data analysis and 70% (45,827) were set aside for modeling.
 
-### **Operationalization**
+*Operationalization -* To capture the relationship between away team travel and game outcomes, the following variables were included in our analysis:
 
-To capture the relationship between away team travel and game outcomes, the following variables were included in our analysis:
-
-*Output Variable*
-
--   Point Differential: Captures the outcome of a game and the magnitude of a team’s win.
-
-*Input Variables*
-
--   Distance: The geodesic distance travelled by the away team.
-
+-   Point Differential (Dependent): Captures the outcome of a game and the magnitude of a team’s win.
+-   Distance: The geodesic distance traveled by the away team.
 -   Travel Direction: Tracks the direction of movement and if it was from coast-to-coast.
-
 -   Attendance: Game attendance, which may affect the performance of each team.
-
 -   Year: The year in which the game was played. Included due to findings in our initial exploration which suggested a strong decrease in the percentage of home team wins over time.
-
-```{r example_cell, echo=FALSE, warning=FALSE, message=FALSE, fig.width = 7, fig.height=2.6}
-
-```
-
-**Figure 1:** Number of respondents identifying with each party description.
 
 # **Modeling**
 
@@ -299,22 +279,36 @@ stargazer(
   digits=3)
 ```
 
-\
-
-### **Model Assumptions**
+###  **Model Assumptions**
 
 #### Independent & Identically Distributed
 
+Games are not fully independent, as team performance may be correlated across seasons. To partially address this, we include year as a numeric covariate, capturing temporal trends in point differentials.
+
 #### A Unique BLP Exists
+
+Covariance matrices (figure x) show finite variance and no perfect collinearity. The correlation matrices (figure y) confirms that all predictor variables are sufficiently independent for OLS estimation.
 
 ### **Model Results & Interpretation**
 
+TBD
+
 ### **Scope & Limitations**
 
+This analysis is descriptive in nature and does not support causal claims about the effect of travel on NBA game outcomes. Games are not fully independent, as team performance may be correlated across time due to persistent team quality, injuries, and broader league dynamics. Additionally, while geodesic distance captures the physical separation between teams, it does not directly measure fatigue, rest, travel conditions, or circadian disruption, such as back-to-back games or sleep loss from changing time zones. Finally, structural changes in the NBA over the seven-decade sample period, including standardization of courts, more movement of players between teams, and travelling being less strenuous, may influence both the distribution of point differentials and their relationship with travel-related variables.
+
 # **Conclusion**
+
+Our analysis reveals that distance traveled by away teams does not significantly affect point differential, suggesting that travel distance also is not a major determinant of game performance. However, travel direction matters: West Coast teams traveling to the East Coast experience a measurable advantage, while East-to-West effects are weaker and less consistent. Consistent with our exploratory analysis, home-court advantage has been declining over time, with away teams winning a larger share of games in recent years. These findings provide important insights into travel and performance dynamics in the NBA, highlighting patterns that may inform scheduling, team preparation for games, and other factors, while emphasizing the limits of causal interpretation due to data and model constraints.
 
 \newpage
 
 # Citations
 
 # Appendix
+
+```{r example_cell, echo=FALSE, warning=FALSE, message=FALSE, fig.width = 7, fig.height=2.6}
+
+```
+
+**Figure 1:** Number of respondents identifying with each party description.
