@@ -147,8 +147,31 @@ Given the large sample size, we use a linear regression model to examine the rel
 
 ```{r model, echo = FALSE, results='asis', message=FALSE, warning=FALSE}
 
+cov_1 <- vcovHC(lm_model_1, type = "HC1")
+robust.se_1 <- sqrt(diag(cov_1))
+robust.se_1 <- robust.se_1[names(coef(lm_model_1))]
+
+cov_2 <- vcovHC(lm_model_2, type = "HC1")
+robust.se_2 <- sqrt(diag(cov_2))
+robust.se_2 <- robust.se_2[names(coef(lm_model_2))]
+
+cov_3 <- vcovHC(lm_model_3, type = "HC1")
+robust.se_3 <- sqrt(diag(cov_3))
+robust.se_3 <- robust.se_3[names(coef(lm_model_3))]
+
+cov_4 <- vcovHC(lm_model_4, type = "HC1")
+robust.se_4 <- sqrt(diag(cov_4))
+robust.se_4 <- robust.se_4[names(coef(lm_model_4))]
+
+
 stargazer(
   lm_model_1, lm_model_2, lm_model_3, lm_model_4,
+  se = list(
+    robust.se_1,
+    robust.se_2,
+    robust.se_3,
+    robust.se_4
+  ),
   header = FALSE,
   no.space = TRUE, 
   column.sep.width = "0.5pt", 
